@@ -5,71 +5,62 @@ import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Root;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
-import org.hibernate.Transaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Isolation;
-import org.springframework.transaction.annotation.Transactional;
 
-import javax.sql.DataSource;
-import java.sql.Connection;
 import java.util.List;
 
 @Component
 @Service
-public class SlowReads {
+public class SlowUpdates {
 
-    @Autowired
-    private DataSource dataSource;
 
     private final SessionFactory sessionFactory;
-    private final LampRepository repository;
-    private static final Logger log = LoggerFactory.getLogger(SlowReads.class);
+    private static final Logger log = LoggerFactory.getLogger(SlowUpdates.class);
 
-    public SlowReads(LampRepository repository, SessionFactory sessionFactory) {
-        this.repository = repository;
+    public SlowUpdates(SessionFactory sessionFactory) {
         this.sessionFactory = sessionFactory;
     }
 
     @Scheduled(fixedRate = 10000)
-//    @Transactional(isolation = Isolation.SERIALIZABLE)
     public void slowlyReadingLamps() {
         new Thread(new Runnable() {
             public void run() {
+                log.info("try to slow update");
                 try (
 
-//                        Connection connection = dataSource.getConnection();
                         Session session = sessionFactory.openSession();) {
-//                    connection.setAutoCommit(false);
-//                    connection.setReadOnly(false);
-//                    Session session = sessionFactory.getCurrentSession();
-//                    session.setDefaultReadOnly(true);
-//                    session.setDefaultReadOnly(false);
                     session.beginTransaction();
+                    session.setDefaultReadOnly(false);
+
                     long now = System.currentTimeMillis();
-//                    List<Lamp> lamps = (List<Lamp>) repository.findAll();
-//                    List<Lamp> lamps = repository.getAllWithNLamps(3);
+
                     CriteriaBuilder lCriteriaBu = session.getCriteriaBuilder();
                     CriteriaQuery<Lamp> lQuery = lCriteriaBu.createQuery(Lamp.class);
                     Root<Lamp> lRoot = lQuery.from(Lamp.class);
                     lQuery.select(lRoot).where(lCriteriaBu.equal(lRoot.get("numberOfLamps"), 3));
-                    List<Lamp> lamps =  session.createQuery(lQuery).getResultList();
-//                    List<Lamp>
                     log.info("Lamp read with findById(1L):");
+                    List<Lamp> lamps = session.createQuery(lQuery).getResultList();
+
                     for (Lamp l : lamps) {
-//                        log.info(l.toString());
                         l.setLastUpdated(now);
+                        session.persist(l);
                         log.info(l.toString());
                     }
+                    session.flush();
+                    // Wait 5 seconds and keep transaction open
                     Thread.sleep(5000);
-                    log.info("Session end");
+                    List<Lamp> lamps2 = session.createQuery(lQuery).getResultList();
+                    for (Lamp l : lamps2) {
+                        l.setLastUpdated(now);
+                        session.persist(l);
+                        log.info(l.toString());
+                    }
                     session.getTransaction().commit();
-                    session.close();
-//                    connection.commit();
+                    log.info("Session end");
                 } catch (Exception e) {
                     log.error("Error in slowlyReadingLamps", e);
                 }
