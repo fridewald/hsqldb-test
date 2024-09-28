@@ -26,7 +26,7 @@ public class SlowUpdates {
     }
 
     @Scheduled(fixedRate = 10000)
-    public void slowlyReadingLamps() {
+    public void slowlyUpdatingLamps() {
         new Thread(new Runnable() {
             public void run() {
                 log.info("try to slow update");
@@ -34,7 +34,6 @@ public class SlowUpdates {
 
                         Session session = sessionFactory.openSession();) {
                     session.beginTransaction();
-                    session.setDefaultReadOnly(false);
 
                     long now = System.currentTimeMillis();
 
@@ -62,7 +61,7 @@ public class SlowUpdates {
                     session.getTransaction().commit();
                     log.info("Session end");
                 } catch (Exception e) {
-                    log.error("Error in slowlyReadingLamps", e);
+                    log.error("Error in slowlyUpdatingLamps", e);
                 }
             }
         }).start();

@@ -19,7 +19,7 @@ public class FastReads {
 
 
     @Scheduled(fixedRate = 500)
-    public void updateLamps() {
+    public void readLamps() {
         log.info("try to fast read");
         try (
                 Session session = sessionFactory.openSession();) {
@@ -30,7 +30,7 @@ public class FastReads {
             log.info(lamp.toString());
             session.getTransaction().commit();
         } catch (Exception e) {
-            log.error("Error in updateLamps", e);
+            log.error("Error in readLamps", e);
         }
     }
 }
