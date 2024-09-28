@@ -1,23 +1,21 @@
 package org.example.hsqldbtest;
 
-import org.hibernate.Session;
 import org.hibernate.SessionFactory;
-import org.hibernate.Transaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
 import java.util.List;
 
-@Component
 @Service
+@EnableTransactionManagement
 public class SlowReads {
 
     @Autowired
@@ -33,16 +31,19 @@ public class SlowReads {
     }
 
     @Scheduled(fixedRate = 10000)
-//    @Transactional(isolation = Isolation.SERIALIZABLE)
+    @Transactional
     public void slowlyReadingLamps() {
         new Thread(new Runnable() {
+            @Transactional
             public void run() {
-                try (
-
-                        Connection connection = dataSource.getConnection();
-                ) {
-                    connection.setAutoCommit(false);
-                    connection.setReadOnly(false);
+                try
+//                        (
+//
+//                        Connection connection = dataSource.getConnection();
+//                )
+                {
+//                    connection.setAutoCommit(false);
+//                    connection.setReadOnly(false);
 //                    Session session = sessionFactory.getCurrentSession();
 //                    session.setDefaultReadOnly(true);
 //                    session.setDefaultReadOnly(false);
@@ -52,15 +53,20 @@ public class SlowReads {
                     List<Lamp> lamps = repository.getAllWithNLamps(3);
                     log.info("Lamp read with findById(1L):");
                     for (Lamp l : lamps) {
-//                        log.info(l.toString());
                         l.setLastUpdated(now);
+                        repository.save(l);
                         log.info(l.toString());
                     }
                     Thread.sleep(5000);
+                    for (Lamp l : lamps) {
+                        l.setLastUpdated(System.currentTimeMillis());
+                        repository.save(l);
+                        log.info(l.toString());
+                    }
                     log.info("Session end");
 //                    session.getTransaction().commit();
 //                    session.close();
-                    connection.commit();
+//                    connection.commit();
                 } catch (Exception e) {
                     log.error("Error in slowlyReadingLamps", e);
                 }

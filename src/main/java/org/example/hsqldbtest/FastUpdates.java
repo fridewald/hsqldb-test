@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,6 +17,7 @@ import javax.sql.DataSource;
 import java.sql.Connection;
 
 @Service
+@EnableTransactionManagement
 public class FastUpdates {
 
     @Autowired
@@ -31,22 +33,25 @@ public class FastUpdates {
 
 
     @Scheduled(fixedRate = 500)
-//    @Transactional(isolation = Isolation.SERIALIZABLE)
+    @Transactional
     public void updateLamps() {
-        try (
-                Connection connection = dataSource.getConnection();
-        ) {
-            connection.setAutoCommit(false);
-            connection.setReadOnly(false);
-            long time = System.currentTimeMillis();
-            Lamp lamp = repository.findByProductId(1L);
-            lamp.setLastUpdated(time);
-            log.info("Lamp update with findById(1L):");
-            log.info(lamp.toString());
-            connection.commit();
-        } catch (Exception e) {
-            log.error("Error in updateLamps", e);
-        }
+//        try
+//                (
+//                Connection connection = dataSource.getConnection();
+//        )
+//        {
+//            connection.setAutoCommit(false);
+//            connection.setReadOnly(false);
+        long time = System.currentTimeMillis();
+        Lamp lamp = repository.findByProductId(1L);
+        lamp.setLastUpdated(time);
+        repository.save(lamp);
+        log.info("Lamp update with findById(1L):");
+        log.info(lamp.toString());
+//            connection.commit();
+//        } catch (Exception e) {
+//            log.error("Error in updateLamps", e);
+//    }
 //        Session session = sessionFactory.getCurrentSession();
 //        session.setDefaultReadOnly(false);
 //        session.beginTransaction();

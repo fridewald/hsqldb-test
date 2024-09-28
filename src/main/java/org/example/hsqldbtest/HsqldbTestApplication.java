@@ -14,6 +14,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 import javax.sql.DataSource;
 import java.util.List;
@@ -23,6 +24,7 @@ import java.util.List;
 //@Import(DatabaseConfig.class)
 @EntityScan("org.example.hsqldbtest")
 @EnableJpaRepositories("org.example.hsqldbtest")
+@EnableTransactionManagement
 public class HsqldbTestApplication {
     private static final Logger log = LoggerFactory.getLogger(HsqldbTestApplication.class);
 
@@ -59,7 +61,7 @@ public class HsqldbTestApplication {
 
 //Logger log = Logger.getLogger("org.hibernate.SQL");
 //log.setLevel(Level.DEBUG);
-            repository.save(new Lamp("Table Lamp", 2, 20.0));
+            repository.save(new Lamp("Table Lamp", 3, 20.0));
             repository.save(new Lamp("Floor Lamp", 1, 30.0));
             repository.save(new Lamp("Door Lamp", 3, 130.0));
 //            repository.save(new Lamp("Desk Lamp", 3, 10.0));
